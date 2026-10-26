@@ -24,20 +24,36 @@ El ESP32 y su firmware todavía no están incluidos en el repositorio.
 ```
 
 ---
+# Smarthome: Control de Acceso con Reconocimiento Facial
 
-## Arquitectura
+[![Android](https://img.shields.io/badge/Android-Jetpack%20Compose-3DDC84?logo=android&logoColor=white)](https://developer.android.com/)
+[![Python](https://img.shields.io/badge/Python-3.12%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![OpenCV](https://img.shields.io/badge/OpenCV-LBPH-5C3EE8?logo=opencv&logoColor=white)](https://opencv.org/)
+[![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com/)
+[![ESP32](https://img.shields.io/badge/Hardware-ESP32%20%7C%20BLE-000000?logo=espressif&logoColor=white)](https://www.espressif.com/)
 
-```
-                 ┌──────────────────────────┐
-  App Android ──▶│        Supabase          │◀── Servidor (Python)
-  (admin)        │  dispositivos            │    (DB directa, psycopg2)
-                 │  perfiles_rostro         │
-                 │  pin_dispositivo (hash)  │
-                 │  actividades             │
-                 └──────────────────────────┘
-                                                      │ BLE
-  Cámara Wansview ── RTSP ──▶ Servidor ──────────▶ ESP32 ──▶ Relé / cerradura
-                                                  (teclado: PIN)
+Sistema IoT de control de acceso híbrido (reconocimiento facial + PIN) para cerraduras inteligentes, compuesto por una aplicación móvil de administración, un servidor local de procesamiento de visión artificial y un microcontrolador de actuación.
+
+> **Estado del proyecto:** 🛠️ *Prototipo en desarrollo activo.* Lógica central de Python, Supabase y Android funcional; firmware de actuador en fase de especificación. Ver [Estado actual](#estado-actual).
+
+---
+
+## 📐 Arquitectura del Sistema
+
+El sistema utiliza una arquitectura descentralizada donde la lógica de visión y verificación residen en el servidor local para garantizar un procesamiento rápido sin sobrecargar el microcontrolador.
+
+```text
+ ┌─────────────────┐             ┌──────────────────────────┐             ┌──────────────────┐
+ │   App Android   │─── HTTPS ──▶│         Supabase         │◀── Postgres │ Servidor Python  │
+ │  (Administrador)│             │  • dispositivos          │    (psycopg2)  │ (Visión + Lógica)│
+ └─────────────────┘             │  • perfiles_rostro       │             └──────────────────┘
+                                 │  • pin_dispositivo (hash)│                      │
+                                 │  • actividades           │                      │ BLE
+                                 └──────────────────────────┘                      ▼
+ ┌─────────────────┐                                                      ┌──────────────────┐
+ │ Cámara Wansview │───────────────────── RTSP Stream ───────────────────▶│   ESP32 / Relé   │
+ └─────────────────┘                                                      │ (Teclado + Chapa)│
+                                                                          └──────────────────┘                                          (teclado: PIN)
 ```
 
 - La **app** no controla la cámara ni recibe imágenes. Crea perfiles, cambia el estado de la cerradura, cambia el PIN y consulta la actividad.
